@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบสุ่มมอนสเตอร์ - Encounter System</title>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #1b1b1b;
+      color: #f1f1f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #90ee90;
+      margin-bottom: 20px;
+    }
+    #result {
+      background: #2c2c2c;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 0 12px rgba(0, 255, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+    button {
+      background: linear-gradient(90deg, #4caf50, #81c784);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      margin-top: 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .monster {
+      color: #ffcc80;
+    }
+    .no-encounter {
+      color: #9e9e9e;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎴 ระบบสุ่มมอนสเตอร์</h1>
+  <div id="result">กดปุ่มด้านล่างเพื่อเริ่มการสุ่ม!</div>
+  <button onclick="drawEncounter()">จั่วการ์ด 1 ครั้ง</button>
+
+  <script>
+    const monsters = [
+      { name: 'Sproutkin', LV: 1, HP: 40, ATK: 8, DEF: 4, EXP: 15, Drop: 'Leaf Seed', Skill: 'มีโอกาส 10% ทำให้พิษ', weight: 4 },
+      { name: 'Ironleaf Beetle', LV: 2, HP: 60, ATK: 10, DEF: 8, EXP: 25, Drop: 'Iron Shard', Skill: 'ลดดาเมจเวท 20%', weight: 4 },
+      { name: 'Vine Wolf', LV: 3, HP: 80, ATK: 12, DEF: 6, EXP: 35, Drop: 'Wolf Pelt', Skill: 'อาจโจมตี 2 ครั้ง', weight: 4 },
+      { name: 'Sprout Mage', LV: 3, HP: 55, ATK: 8, DEF: 5, EXP: 30, Drop: 'Mana Fruit', Skill: 'ใช้เวท Poison Mist', weight: 4 },
+      { name: 'Nano Sprig', LV: 2, HP: 50, ATK: 9, DEF: 5, EXP: 20, Drop: 'Nano Core', Skill: 'โจมตีแบบพลังนาโน', weight: 4 },
+      { name: 'Event Beast', LV: '—', HP: 100, ATK: 20, DEF: 8, EXP: 40, Drop: 'Rare Component', Skill: 'หลับลึก 1 ตา', weight: 1 }
+    ];
+
+    const eventTypes = ['Monster', 'No Encounter'];
+    const eventWeights = [60, 40];
+
+    function weightedRandom(choices) {
+      let total = choices.reduce((sum, c) => sum + c.weight, 0);
+      let r = Math.random() * total;
+      for (let choice of choices) {
+        if (r < choice.weight) return choice;
+        r -= choice.weight;
+      }
+    }
+
+    function randomEvent() {
+      const total = eventWeights[0] + eventWeights[1];
+      const rand = Math.random() * total;
+      return rand < eventWeights[0] ? 'Monster' : 'No Encounter';
+    }
+
+    function drawEncounter() {
+      const resultDiv = document.getElementById('result');
+      const event = randomEvent();
+
+      if (event === 'No Encounter') {
+        resultDiv.innerHTML = `<h2 class='no-encounter'>✨ การ์ดว่างเปล่า!</h2><p>ไม่เกิดอะไรขึ้น...</p>`;
+        return;
+      }
+
+      const monster = weightedRandom(monsters);
+      resultDiv.innerHTML = `
+        <h2 class='monster'>⚔️ พบกับ ${monster.name} (LV ${monster.LV})</h2>
+        <p><strong>HP:</strong> ${monster.HP} | <strong>ATK:</strong> ${monster.ATK} | <strong>DEF:</strong> ${monster.DEF}</p>
+        <p><strong>EXP:</strong> ${monster.EXP} | <strong>Drop:</strong> ${monster.Drop}</p>
+        <p><strong>Skill:</strong> ${monster.Skill}</p>
+        <p style='margin-top:10px;color:#ccc;'>(การ์ดถูกนำกลับไปสับใหม่)</p>
+      `;
+    }
+  </script>
+</body>
+</html>
