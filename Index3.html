@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌿 Zone A Monster — ระบบสุ่มการกระทำต่อเทิร์น</title>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      color: #f2f2f2;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      min-height: 100vh;
+    }
+    h1 {
+      text-shadow: 0 0 20px rgba(0,255,100,0.5);
+      margin-bottom: 10px;
+    }
+    #result {
+      background: rgba(30, 30, 30, 0.9);
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px auto;
+      width: 95%;
+      max-width: 700px;
+      box-shadow: 0 8px 32px rgba(0,255,100,0.3);
+      border: 2px solid rgba(0,255,100,0.2);
+      backdrop-filter: blur(10px);
+    }
+    button {
+      background: linear-gradient(90deg,#4caf50,#81c784);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+    }
+    button:hover { 
+      transform: scale(1.08); 
+      box-shadow: 0 6px 20px rgba(76,175,80,0.6);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
+    #action-buttons button:nth-child(1) {
+      background: linear-gradient(90deg,#f44336,#e57373);
+    }
+    #action-buttons button:nth-child(2) {
+      background: linear-gradient(90deg,#2196f3,#64b5f6);
+    }
+    #player-action-buttons button:nth-child(1) {
+      background: linear-gradient(90deg,#ff9800,#ffb74d);
+    }
+    #player-action-buttons button:nth-child(2) {
+      background: linear-gradient(90deg,#9c27b0,#ba68c8);
+    }
+    #player-action-buttons button:nth-child(3) {
+      background: linear-gradient(90deg,#00bcd4,#4dd0e1);
+    }
+    .monster-stat {
+      display: inline-block;
+      margin: 5px 10px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .skill-box {
+      background: rgba(100,255,150,0.1);
+      border-left: 4px solid #4caf50;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      text-align: left;
+    }
+    .action-result {
+      background: rgba(255,100,100,0.15);
+      border-left: 4px solid #f44336;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      animation: slideIn 0.4s ease-out;
+    }
+    .class-card {
+      background: rgba(40,40,40,0.9);
+      border: 2px solid rgba(100,255,150,0.3);
+      border-radius: 12px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .class-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(100,255,150,0.8);
+      box-shadow: 0 8px 25px rgba(100,255,150,0.4);
+    }
+    .class-card h3 {
+      margin: 5px 0;
+      color: #81c784;
+    }
+    .class-stats {
+      font-size: 13px;
+      color: #ccc;
+      margin: 10px 0;
+      line-height: 1.6;
+    }
+    .class-passive {
+      background: rgba(100,255,150,0.15);
+      border-radius: 5px;
+      padding: 8px;
+      font-size: 12px;
+      color: #a5d6a7;
+      margin-top: 10px;
+    }
+    #player-info {
+      background: rgba(50,50,50,0.9);
+      border: 2px solid rgba(100,200,255,0.4);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 0 auto 20px;
+      max-width: 700px;
+    }
+    .hp-bar {
+      width: 100%;
+      height: 25px;
+      background: rgba(50,50,50,0.8);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 10px 0;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f44336, #e57373);
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .hp-fill.player {
+      background: linear-gradient(90deg, #4caf50, #81c784);
+    }
+    .damage-number {
+      color: #ff5252;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255,82,82,0.8);
+      animation: damageFloat 0.6s ease-out;
+    }
+    @keyframes damageFloat {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-20px); opacity: 0; }
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .spd-roll {
+      font-size: 18px;
+      color: #81c784;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .level-up {
+      background: linear-gradient(90deg, #ffd700, #ffed4e);
+      color: #000;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      font-weight: bold;
+      animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .battle-log {
+      background: rgba(20,20,20,0.8);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 15px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 13px;
+    }
+    .battle-log p {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #4caf50;
+      padding-left: 10px;
+    }
+    .passive-check {
+      background: rgba(255,193,7,0.2);
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌿 Zone A Monster — ระบบสุ่มสกิลต่อเทิร์น</h1>
+  <p style="color: #aaa; margin-top: -5px;">ระบบสุ่มมอนสเตอร์และการกระทำต่อเทิร์น</p>
+  
+  <div id="class-selection" style="display:block;">
+    <h2 style="color:#81c784; margin-bottom:20px;">🎭 เลือกอาชีพของคุณ</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px; max-width:900px; margin:0 auto 20px;">
+      <div class="class-card" onclick="selectClass('wanderer')">
+        <h3>🗺️ Wanderer</h3>
+        <p style="font-size:12px; color:#aaa;">นักพเนจร</p>
+        <div class="class-stats">
+          HP: 100 | ATK: 10 | DEF: 8<br>
+          MAG: 6 | SPD: 5 | LUCK: 3
+        </div>
+        <div class="class-passive">โอกาส Dice +2 = 10%</div>
+      </div>
+      <div class="class-card" onclick="selectClass('warrior')">
+        <h3>⚔️ Warrior</h3>
+        <p style="font-size:12px; color:#aaa;">นักรบ</p>
+        <div class="class-stats">
+          HP: 120 | ATK: 12 | DEF: 10<br>
+          MAG: 4 | SPD: 4 | LUCK: 2
+        </div>
+        <div class="class-passive">ดาเมจ +10% เมื่อ HP < 50%</div>
+      </div>
+      <div class="class-card" onclick="selectClass('ranger')">
+        <h3>🏹 Ranger</h3>
+        <p style="font-size:12px; color:#aaa;">นักล่า</p>
+        <div class="class-stats">
+          HP: 90 | ATK: 9 | DEF: 6<br>
+          MAG: 5 | SPD: 8 | LUCK: 5
+        </div>
+        <div class="class-passive">โอกาสหลบ 20%</div>
+      </div>
+      <div class="class-card" onclick="selectClass('mage')">
+        <h3>✨ Mage</h3>
+        <p style="font-size:12px; color:#aaa;">จอมเวท</p>
+        <div class="class-stats">
+          HP: 80 | ATK: 6 | DEF: 5<br>
+          MAG: 12 | SPD: 6 | LUCK: 3
+        </div>
+        <div class="class-passive">ใช้เวทฟื้น HP 5</div>
+      </div>
+      <div class="class-card" onclick="selectClass('cleric')">
+        <h3>🙏 Cleric</h3>
+        <p style="font-size:12px; color:#aaa;">นักบวช</p>
+        <div class="class-stats">
+          HP: 90 | ATK: 7 | DEF: 7<br>
+          MAG: 10 | SPD: 5 | LUCK: 4
+        </div>
+        <div class="class-passive">Heal +25% โอกาส</div>
+      </div>
+      <div class="class-card" onclick="selectClass('engineer')">
+        <h3>⚙️ Engineer</h3>
+        <p style="font-size:12px; color:#aaa;">ช่างนาโน</p>
+        <div class="class-stats">
+          HP: 100 | ATK: 8 | DEF: 8<br>
+          MAG: 6 | SPD: 5 | LUCK: 3
+        </div>
+        <div class="class-passive">ไอเทมฟรี 1 ครั้ง/โซน</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="result" style="display:none;">
+    <p style="font-size: 18px; color: #81c784;">กดปุ่มด้านล่างเพื่อเริ่มจั่วมอนสเตอร์</p>
+    <p style="font-size: 14px; color: #888;">โอกาสพบมอนสเตอร์ 60%</p>
+  </div>
+  <button id="draw-btn" onclick="drawEncounter()" style="display:none;">🎴 จั่วมอนสเตอร์</button>
+  <div id="player-action-buttons" style="display:none;">
+    <button onclick="playerAction('attack')">⚔️ โจมตี</button>
+    <button onclick="playerAction('magic')">✨ ใช้เวท</button>
+    <button onclick="playerAction('guard')">🛡️ ป้องกัน</button>
+    <button onclick="checkPassive()" style="background: linear-gradient(90deg,#ffc107,#ffd54f);">🎲 เช็คสกิล Passive</button>
+  </div>
+  <div id="action-buttons" style="display:none;">
+    <button onclick="chooseAction('attack')">⚔️ มอนสเตอร์โจมตี</button>
+    <button onclick="chooseAction('guard')">🛡️ มอนสเตอร์ป้องกัน</button>
+  </div>
+
+  <script>
+    const classes = {
+      wanderer: { name: '🗺️ Wanderer (นักพเนจร)', HP: 100, ATK: 10, DEF: 8, MAG: 6, SPD: 5, LUCK: 3, passive: 'โอกาส Dice +2 = 10%', passiveChance: 0.1 },
+      warrior: { name: '⚔️ Warrior (นักรบ)', HP: 120, ATK: 12, DEF: 10, MAG: 4, SPD: 4, LUCK: 2, passive: 'ดาเมจเพิ่ม +10% เมื่อ HP < 50%', passiveChance: 1.0 },
+      ranger: { name: '🏹 Ranger (นักล่า)', HP: 90, ATK: 9, DEF: 6, MAG: 5, SPD: 8, LUCK: 5, passive: 'มีโอกาส 20% หลบการโจมตี', passiveChance: 0.2 },
+      mage: { name: '✨ Mage (จอมเวท)', HP: 80, ATK: 6, DEF: 5, MAG: 12, SPD: 6, LUCK: 3, passive: 'ทุกการใช้เวท ฟื้น HP 5', passiveChance: 1.0 },
+      cleric: { name: '🙏 Cleric (นักบวช)', HP: 90, ATK: 7, DEF: 7, MAG: 10, SPD: 5, LUCK: 4, passive: 'Heal Spell มีโอกาสรักษาเพิ่ม 25%', passiveChance: 0.25 },
+      engineer: { name: '⚙️ Engineer (ช่างนาโน)', HP: 100, ATK: 8, DEF: 8, MAG: 6, SPD: 5, LUCK: 3, passive: 'ใช้ไอเทมฟื้นฟูได้ฟรี 1 ครั้งต่อโซน', passiveChance: 1.0 }
+    };
+
+    window.gameState = {
+      player: null,
+      monster: null,
+      playerMaxHP: 0,
+      monsterMaxHP: 0,
+      level: 1,
+      exp: 0,
+      expToNext: 50,
+      battleLog: [],
+      turn: 0,
+      playerDefending: false,
+      monsterDefending: false,
+      freeItemUsed: false
+    };
+
+    function selectClass(classType) {
+      const cls = classes[classType];
+      window.gameState.player = {
+        ...cls,
+        currentHP: cls.HP,
+        baseHP: cls.HP,
+        baseATK: cls.ATK,
+        baseDEF: cls.DEF,
+        baseMAG: cls.MAG,
+        baseSPD: cls.SPD
+      };
+      window.gameState.playerMaxHP = cls.HP;
+      
+      document.getElementById('class-selection').style.display = 'none';
+      
+      const playerInfo = document.createElement('div');
+      playerInfo.id = 'player-info';
+      playerInfo.innerHTML = `
+        <h3 style="color:#64b5f6; margin:0 0 10px 0;">${cls.name} | LV ${window.gameState.level}</h3>
+        <div class="hp-bar">
+          <div class="hp-fill player" id="player-hp-bar" style="width:100%;">
+            ${cls.HP} / ${cls.HP}
+          </div>
+        </div>
+        <div style="margin:10px 0;">
+          <span class="monster-stat">⚔️ ATK: ${cls.ATK}</span>
+          <span class="monster-stat">🛡️ DEF: ${cls.DEF}</span>
+          <span class="monster-stat">✨ MAG: ${cls.MAG}</span>
+          <span class="monster-stat">⚡ SPD: ${cls.SPD}</span>
+          <span class="monster-stat">🍀 LUCK: ${cls.LUCK}</span>
+        </div>
+        <div style="margin:10px 0;">
+          <span class="monster-stat">💫 EXP: ${window.gameState.exp} / ${window.gameState.expToNext}</span>
+        </div>
+        <div class="skill-box" style="border-left-color:#64b5f6;">
+          <b>Passive:</b> ${cls.passive}
+        </div>
+      `;
+      
+      document.body.insertBefore(playerInfo, document.getElementById('result'));
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('draw-btn').style.display = 'inline-block';
+    }
+
+    const monsters = [
+      { name: '🟩 A1 Sproutkin', LV: 1, HP: 40, ATK: 8, DEF: 4, MAG: 3, SPD: 4, EXP: 15, Drop: 'Leaf Seed', 
+        passive: '🌱 Poison Tap — โจมตี 1.5× ATK, มีโอกาส 30% ติดพิษ', weight: 4, 
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 50, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 10, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Poison Tap', chance: 25, desc: 'ดาเมจ ×1.5 ATK, มีโอกาสติดพิษ 30%'},
+          {name: 'อัลติ: Root Slam', chance: 15, desc: '(ATK + MAG) × 2 - DEF'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 60, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์ (กันอัลติ)', chance: 30, desc: 'DEF × 2 เมื่อสวนสำเร็จ'},
+          {name: 'ป้องกันเวท', chance: 10, desc: 'ลดดาเมจเวท 70%'}
+        ]},
+      { name: '🟫 A2 Ironleaf Beetle', LV: 2, HP: 60, ATK: 10, DEF: 8, MAG: 2, SPD: 3, EXP: 25, Drop: 'Iron Shard',
+        passive: '🪲 Iron Charge — (ATK × 1.8) - DEF, เพิ่ม DEF +3 เทิร์นหน้า', weight: 4,
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 40, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 10, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Iron Charge', chance: 25, desc: '(ATK × 1.8) - DEF / เพิ่ม DEF +3 เทิร์นถัดไป'},
+          {name: 'อัลติ: Steel Drill', chance: 25, desc: '(ATK + MAG) × 2 - DEF'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 50, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์', chance: 40, desc: 'DEF × 2 เมื่อโดนอัลติ'},
+          {name: 'ป้องกันเวท', chance: 10, desc: 'ลดดาเมจเวท 70%'}
+        ]},
+      { name: '🟦 A3 Vine Wolf', LV: 3, HP: 80, ATK: 12, DEF: 6, MAG: 4, SPD: 6, EXP: 35, Drop: 'Wolf Pelt',
+        passive: '🐺 Double Bite — โอกาสโจมตี 2 ครั้ง, แต่ DEF ลดลง 2 ในเทิร์นนั้น', weight: 4,
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 40, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 15, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Double Bite', chance: 30, desc: 'โจมตี 2 ครั้ง, DEF -2 ในเทิร์นนั้น'},
+          {name: 'อัลติ: Howl of Roots', chance: 15, desc: '(ATK × 2) - DEF / ลด DEF ศัตรู 2 เทิร์น'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 70, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์', chance: 20, desc: 'DEF × 2 เมื่อสวนสำเร็จ'},
+          {name: 'ป้องกันเวท', chance: 10, desc: 'ลดเวท 70%'}
+        ]},
+      { name: '🟪 A4 Sprout Mage', LV: 3, HP: 55, ATK: 8, DEF: 5, MAG: 10, SPD: 5, EXP: 30, Drop: 'Mana Fruit',
+        passive: '🍄 Poison Mist — (MAG × 1.8) - (MAG ฝ่ายรับ × 0.8), ติดพิษ 50%', weight: 4,
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 20, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 40, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Poison Mist', chance: 25, desc: 'ดาเมจเวท, โอกาสติดพิษ 50%'},
+          {name: 'อัลติ: Venom Storm', chance: 15, desc: '(MAG × 2.2) - (MAG รับ × 0.8), พิษแน่นอน'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 40, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์', chance: 10, desc: 'DEF × 2 (แต่ไม่สวนเวทได้)'},
+          {name: 'ป้องกันเวท', chance: 50, desc: 'ลดดาเมจเวท 70%'}
+        ]},
+      { name: '🟨 A5 Nano Sprig', LV: 2, HP: 50, ATK: 9, DEF: 5, MAG: 8, SPD: 5, EXP: 20, Drop: 'Nano Core',
+        passive: '⚙️ Nano Spark — (MAG × 1.6) + (ATK × 0.5) - DEF, มีโอกาสลด DEF เป้าหมาย 1 เทิร์น', weight: 4,
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 30, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 30, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Nano Spark', chance: 25, desc: 'ผสม ATK+MAG, ลด DEF ศัตรู 1 เทิร์น'},
+          {name: 'อัลติ: Nano Burst', chance: 15, desc: '(ATK + MAG) × 2 - DEF'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 50, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์', chance: 25, desc: 'DEF × 2'},
+          {name: 'ป้องกันเวท', chance: 25, desc: 'ลดเวท 70%'}
+        ]},
+      { name: '🟥 A6 Event Beast', LV: '—', HP: 100, ATK: 14, DEF: 8, MAG: 6, SPD: 5, EXP: 40, Drop: 'Fragment 1',
+        passive: '💀 Root Breaker — (ATK + MAG) × 2 - DEF, โอกาส 50% ทำให้ติดสถานะ "งอกราก" (ขยับไม่ได้ 1 เทิร์น)', weight: 1,
+        attacks: [
+          {name: 'ตีธรรมดา', chance: 30, desc: '(ATK × 1.5) - DEF'},
+          {name: 'ตีเวท', chance: 25, desc: '(MAG × 1.8) - (MAG ฝั่งรับ × 0.8)'},
+          {name: 'สกิล: Root Breaker', chance: 30, desc: '(ATK + MAG) × 2 - DEF, โอกาสทำให้ "งอกราก" 1 เทิร์น'},
+          {name: 'อัลติ: Heart Drain', chance: 15, desc: '(ATK + MAG × 2) - DEF, ฟื้น HP 20% จากดาเมจ'}
+        ],
+        guards: [
+          {name: 'ป้องกันปกติ', chance: 40, desc: 'ลดดาเมจ 50%'},
+          {name: 'เคาน์เตอร์', chance: 40, desc: 'DEF × 2'},
+          {name: 'ป้องกันเวท', chance: 20, desc: 'ลดเวท 70%'}
+        ]}
+    ];
+
+    function weightedRandom(list){
+      let total=list.reduce((s,i)=>s+i.weight,0);
+      let r=Math.random()*total;
+      for(let i of list){
+        if(r<i.weight)return i;
+        r-=i.weight;
+      }
+    }
+
+    function weightedChoice(actions){
+      let total=actions.reduce((s,a)=>s+a.chance,0);
+      let r=Math.random()*total;
+      for(let a of actions){
+        if(r<a.chance)return a;
+        r-=a.chance;
+      }
+    }
+
+    function updatePlayerInfo() {
+      const p = window.gameState.player;
+      const hpPercent = (p.currentHP / window.gameState.playerMaxHP) * 100;
+      document.getElementById('player-info').innerHTML = `
+        <h3 style="color:#64b5f6; margin:0 0 10px 0;">${p.name} | LV ${window.gameState.level}</h3>
+        <div class="hp-bar">
+          <div class="hp-fill player" id="player-hp-bar" style="width:${hpPercent}%;">
+            ${p.currentHP} / ${window.gameState.playerMaxHP}
+          </div>
+        </div>
+        <div style="margin:10px 0;">
+          <span class="monster-stat">⚔️ ATK: ${p.ATK}</span>
+          <span class="monster-stat">🛡️ DEF: ${p.DEF}</span>
+          <span class="monster-stat">✨ MAG: ${p.MAG}</span>
+          <span class="monster-stat">⚡ SPD: ${p.SPD}</span>
+          <span class="monster-stat">🍀 LUCK: ${p.LUCK}</span>
+        </div>
+        <div style="margin:10px 0;">
+          <span class="monster-stat">💫 EXP: ${window.gameState.exp} / ${window.gameState.expToNext}</span>
+        </div>
+        <div class="skill-box" style="border-left-color:#64b5f6;">
+          <b>Passive:</b> ${p.passive}
+        </div>
+      `;
+    }
+
+    function updateMonsterInfo() {
+      const m = window.gameState.monster;
+      const hpPercent = (m.currentHP / window.gameState.monsterMaxHP) * 100;
+      const monsterSection = document.getElementById('monster-section');
+      if (monsterSection) {
+        monsterSection.querySelector('.hp-fill').style.width = hpPercent + '%';
+        monsterSection.querySelector('.hp-fill').textContent = `${m.currentHP} / ${window.gameState.monsterMaxHP}`;
+      }
+    }
+
+    function addLog(message, color = '#4caf50') {
+      window.gameState.battleLog.unshift(`<span style="color:${color};">${message}</span>`);
+      if (window.gameState.battleLog.length > 10) window.gameState.battleLog.pop();
+      updateBattleLog();
+    }
+
+    function updateBattleLog() {
+      const logDiv = document.getElementById('battle-log');
+      if (logDiv) {
+        logDiv.innerHTML = window.gameState.battleLog.map(log => `<p>${log}</p>`).join('');
+      }
+    }
+
+    function checkPassive() {
+      const p = window.gameState.player;
+      const passiveDiv = document.createElement('div');
+      passiveDiv.className = 'passive-check';
+      
+      let result = '';
+      const roll = Math.random();
+      
+      if (p.name.includes('Wanderer')) {
+        if (roll < p.passiveChance) {
+          result = '✅ สำเร็จ! Dice +2 ทำงาน!';
+          addLog('?
