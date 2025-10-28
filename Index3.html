@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌿 Zone A Monster — ระบบสุ่มการกระทำต่อเทิร์น</title>
+  <title>🌿 Zone A Battle System</title>
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -14,17 +14,13 @@
       margin: 0;
       min-height: 100vh;
     }
-    h1 {
-      text-shadow: 0 0 20px rgba(0,255,100,0.5);
-      margin-bottom: 10px;
-    }
-    #result {
-      background: rgba(30, 30, 30, 0.9);
+    h1 { text-shadow: 0 0 20px rgba(0,255,100,0.5); margin-bottom: 10px; }
+    #result, #battle-log {
+      background: rgba(30,30,30,0.9);
       border-radius: 15px;
       padding: 25px;
       margin: 20px auto;
-      width: 95%;
-      max-width: 700px;
+      width: 95%; max-width: 700px;
       box-shadow: 0 8px 32px rgba(0,255,100,0.3);
       border: 2px solid rgba(0,255,100,0.2);
       backdrop-filter: blur(10px);
@@ -34,6 +30,141 @@
       color: #fff;
       border: none;
       padding: 12px 24px;
+      margin: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 16px; font-weight: bold;
+      box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+    }
+    button:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(76,175,80,0.6); }
+    button:active { transform: scale(0.95); }
+    .monster-stat {
+      display: inline-block; margin: 5px 10px; padding: 5px 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px; font-size: 14px;
+    }
+    .class-card { background: rgba(40,40,40,0.9); border: 2px solid rgba(100,255,150,0.3);
+      border-radius: 12px; padding: 15px; cursor: pointer; transition: all 0.3s;
+    }
+    .class-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(100,255,150,0.8);
+      box-shadow: 0 8px 25px rgba(100,255,150,0.4);
+    }
+    .class-card h3 { margin: 5px 0; color: #81c784; }
+    .action-result {
+      background: rgba(255,100,100,0.15);
+      border-left: 4px solid #f44336;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌿 Zone A — ระบบต่อสู้และอัปเลเวล</h1>
+  <div id="class-selection">
+    <h2 style="color:#81c784;">🎭 เลือกอาชีพของคุณ</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;max-width:900px;margin:0 auto;">
+      <div class="class-card" onclick="selectClass('warrior')">
+        <h3>⚔️ Warrior</h3><p>นักรบ</p><p>HP 120 | ATK 12 | DEF 10 | MAG 4</p><p>Passive: ดาเมจ +10% เมื่อ HP < 50%</p>
+      </div>
+      <div class="class-card" onclick="selectClass('ranger')">
+        <h3>🏹 Ranger</h3><p>นักล่า</p><p>HP 90 | ATK 9 | DEF 6 | SPD 8</p><p>Passive: โอกาสหลบ 20%</p>
+      </div>
+      <div class="class-card" onclick="selectClass('mage')">
+        <h3>✨ Mage</h3><p>จอมเวท</p><p>HP 80 | ATK 6 | MAG 12 | DEF 5</p><p>Passive: ใช้เวทฟื้น HP 5</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="result" style="display:none;"></div>
+  <div id="battle-log" style="display:none;"></div>
+  <button id="draw-btn" style="display:none;" onclick="startBattle()">🎴 เริ่มการต่อสู้</button>
+  <button id="passive-btn" style="display:none;" onclick="checkPassive()">🎲 สุ่ม Passive</button>
+
+  <script>
+    const classes = {
+      warrior: {name:'⚔️ Warrior',HP:120,ATK:12,DEF:10,MAG:4,SPD:4,LUCK:2,passive:'damageBoost'},
+      ranger: {name:'🏹 Ranger',HP:90,ATK:9,DEF:6,MAG:5,SPD:8,LUCK:5,passive:'dodge'},
+      mage: {name:'✨ Mage',HP:80,ATK:6,DEF:5,MAG:12,SPD:6,LUCK:3,passive:'heal'}
+    };
+    let player=null, playerLV=1, playerEXP=0, expToNext=100;
+    let monster=null;
+
+    function selectClass(type){
+      player=JSON.parse(JSON.stringify(classes[type]));
+      document.getElementById('class-selection').style.display='none';
+      document.getElementById('draw-btn').style.display='inline-block';
+      document.getElementById('passive-btn').style.display='inline-block';
+      updateInfo("เลือกอาชีพ "+player.name+" แล้ว!");
+    }
+
+    function updateInfo(text){
+      const box=document.getElementById('result');
+      box.style.display='block';
+      box.innerHTML=`<h3>${text}</h3>
+        <p>LV: ${playerLV} | EXP: ${playerEXP}/${expToNext}</p>
+        <p>❤️ HP: ${player.HP} | ⚔️ ATK: ${player.ATK} | 🛡️ DEF: ${player.DEF} | ✨ MAG: ${player.MAG}</p>`;
+    }
+
+    const monsters=[
+      {name:'🟩 Sproutkin',HP:40,ATK:8,DEF:4,MAG:3,EXP:15},
+      {name:'🟫 Ironleaf Beetle',HP:60,ATK:10,DEF:8,MAG:2,EXP:25},
+      {name:'🟦 Vine Wolf',HP:80,ATK:12,DEF:6,MAG:4,EXP:35}
+    ];
+
+    function startBattle(){
+      monster = monsters[Math.floor(Math.random()*monsters.length)];
+      let log=`<h2>⚔️ พบ ${monster.name}</h2>`;
+      const playerDmg=Math.max(0,Math.floor((player.ATK*1.5)-monster.DEF));
+      const monDmg=Math.max(0,Math.floor((monster.ATK*1.5)-player.DEF));
+      let playerHP=player.HP-monDmg;
+      let monHP=monster.HP-playerDmg;
+      let critChance=Math.min(25,player.LUCK*3);
+      if(Math.random()*100<critChance){monHP-=player.ATK;log+="<p>💥 Critical Hit!</p>";}
+      if(monHP<=0&&playerHP>0){
+        playerEXP+=monster.EXP;
+        if(playerEXP>=expToNext){ levelUp(); }
+        log+=`<p style="color:#4caf50;">คุณชนะ ได้รับ EXP ${monster.EXP}</p>`;
+      }else if(playerHP<=0&&monHP>0){
+        log+=`<p style="color:#f44336;">คุณพ่ายแพ้... HP เหลือ 0</p>`;
+      }else{
+        log+=`<p>ทั้งคู่ยังยืนอยู่! Player HP: ${playerHP} | Monster HP: ${monHP}</p>`;
+      }
+      const battle=document.getElementById('battle-log');
+      battle.style.display='block'; battle.innerHTML=log;
+      updateInfo("ผลการต่อสู้ล่าสุด");
+    }
+
+    function levelUp(){
+      playerLV++;
+      playerEXP=0;
+      expToNext+=50;
+      player.HP+=10; player.ATK+=2; player.DEF+=1;
+      updateInfo("🎉 เลเวลอัปเป็น LV "+playerLV+"!");
+    }
+
+    function checkPassive(){
+      let msg="";
+      switch(player.passive){
+        case 'damageBoost':
+          if(player.HP<player.HP/2 && Math.random()<0.8) msg="⚔️ ดาเมจเพิ่ม +10%!";
+          else msg="❌ Passive ไม่ทำงาน";
+          break;
+        case 'dodge':
+          msg=Math.random()<0.2?"🏹 หลบการโจมตีได้!":"❌ Passive ไม่ทำงาน";
+          break;
+        case 'heal':
+          msg=Math.random()<0.5?"✨ ฟื้น HP 5 หน่วย":"❌ Passive ไม่ทำงาน";
+          break;
+      }
+      document.getElementById('battle-log').innerHTML=`<p>${msg}</p>`;
+    }
+  </script>
+</body>
+</html>
       margin: 10px;
       border-radius: 10px;
       cursor: pointer;
